@@ -1,0 +1,9 @@
+build/
+*.elf
+*.nro
+*.nacp
+*.o
+romfs/
+*.dat
+freshdump/
+*.bin
