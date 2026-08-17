@@ -12,9 +12,16 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 - [x] GitHub Releases with ready-to-install `.nro` + `items.txt`
 - [x] Submitted to the Homebrew App Store & sphaira++
 
+## ✅ Shipped — v1.1
+
+- [x] Full graphical UI (SDL2 renderer replaces the text console)
+- [x] PNG icon rendering from the SD card (stb_image)
+- [x] Crisp text via SDL2_ttf with bundled rounded font
+- [x] Graphical menu with highlight navigation (Bells / Slot / Item / Count)
+
 ## 🎨 UI & Graphics
 
-- [ ] **Item Pictures** — custom framebuffer graphics engine (stb_image + bitmap font) so item art shows next to names
+- [ ] **Per-item Pictures** — show each item's sprite next to its name (graphics engine shipped in v1.1)
 - [ ] **Favorites Menu** — one-click injects for Nook Miles Tickets, Star Fragments, gold tools & more
 - [ ] **Dark Mode** — sleek theme for late-night editing sessions
 
