@@ -21,7 +21,7 @@ ARCH		:=	-march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS		:=	-g -Wall -O2 -ffunction-sections $(ARCH) -D__SWITCH__
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 LDFLAGS		:=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
-LIBS := -lnx
+LIBS := -lSDL2 -lEGL -lglapi -ldrm_nouveau -lnx
 LIBDIRS		:=	$(DEVKITPRO)/libnx
 
 #---------------------------------------------------------------------------------
@@ -117,3 +117,7 @@ personal_dat.o: $(TOPDIR)/romfs/personal.dat
 personalHeader_dat.o: $(TOPDIR)/romfs/personalHeader.dat
 	@echo embedding $(notdir $<)
 	@cd $(TOPDIR)/romfs && $(OBJCOPY) -I binary -O elf64-littleaarch64 -B aarch64 personalHeader.dat $(CURDIR)/personalHeader_dat.o
+CFLAGS += -I$(DEVKITPRO)/portlibs/switch/include
+CXXFLAGS += -I$(DEVKITPRO)/portlibs/switch/include
+LIBDIRS += $(DEVKITPRO)/portlibs/switch
+LDFLAGS += -L$(DEVKITPRO)/portlibs/switch/lib
