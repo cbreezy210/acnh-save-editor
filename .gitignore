@@ -7,3 +7,4 @@ romfs/
 *.dat
 freshdump/
 *.bin
+items.txt
