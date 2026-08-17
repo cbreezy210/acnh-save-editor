@@ -8,3 +8,4 @@ romfs/
 freshdump/
 *.bin
 items.txt
+font.ttf
