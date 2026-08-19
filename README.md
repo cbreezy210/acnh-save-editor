@@ -51,6 +51,8 @@ cd acnh-save-editor
 make
 ```
 
+After building, copy `acnh_editor.nro` and `icon.png` from the repo root, along with `items.txt` and `font.ttf` from the `assets/` folder, to your SD card at `sdmc:/switch/acnh_editor/` before running.
+
 ## ⚠️ Disclaimer
 
 This is an educational project. Always keep backups of your save files. Modifying save data always carries a risk. I am not responsible for corrupted islands or banned consoles. Use at your own risk!
