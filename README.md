@@ -38,12 +38,7 @@ A 100% native Nintendo Switch homebrew application for editing *Animal Crossing:
 
 ## 🗺️ Roadmap
 
-| Version | Status | Highlights |
-| :--- | :--- | :--- |
-| **v1.0** | ✅ Shipped | Foundation: Wallet, Bank, Pocket injection, SD backups |
-| **v1.1** | ✅ Shipped | Graphical SDL2 UI, icon rendering, bundled font |
-| **v1.2** | ✅ Shipped | Dual-file engine, Nook Miles & House Loan, Favorites, Loadouts, Backup Restore |
-| **v1.3** | 🔜 Planned | Expanded Favorites, DIY Recipe Unlocker, Multi-Player support, Turnip Prices |
+See [ROADMAP.md](ROADMAP.md) for the full list of shipped and planned features.
 
 ## 🛠️ Building from Source
 
