@@ -36,13 +36,26 @@ A 100% native Nintendo Switch homebrew application for editing *Animal Crossing:
 | **ZL** | Restore from last SD backup (Emergency Rollback) |
 | **Plus (+)** | Exit app |
 
+## 🗺️ Roadmap
+
+| Version | Status | Highlights |
+| :--- | :--- | :--- |
+| **v1.0** | ✅ Shipped | Foundation: Wallet, Bank, Pocket injection, SD backups |
+| **v1.1** | ✅ Shipped | Graphical SDL2 UI, icon rendering, bundled font |
+| **v1.2** | ✅ Shipped | Dual-file engine, Nook Miles & House Loan, Favorites, Loadouts, Backup Restore |
+| **v1.3** | 🔜 Planned | Expanded Favorites, DIY Recipe Unlocker, Multi-Player support, Turnip Prices |
+
 ## 🛠️ Building from Source
 
 Requires [devkitPro](https://devkitpro.org/) with `switch-dev` installed.
+
 ```bash
 pacman -S switch-sdl2 switch-sdl2_ttf switch-sdl2_image
 git clone https://github.com/cbreezy210/acnh-save-editor.git
 cd acnh-save-editor
 make
-⚠️ Disclaimer
+```
+
+## ⚠️ Disclaimer
+
 This is an educational project. Always keep backups of your save files. Modifying save data always carries a risk. I am not responsible for corrupted islands or banned consoles. Use at your own risk!
