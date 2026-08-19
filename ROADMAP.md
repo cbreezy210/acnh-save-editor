@@ -19,16 +19,23 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 - [x] Crisp text via SDL2_ttf with bundled rounded font
 - [x] Graphical menu with highlight navigation (Bells / Slot / Item / Count)
 
+## ✅ Shipped — v1.2
+
+- [x] Dual-file save engine (`personal.dat` + `main.dat` with dual hash healing)
+- [x] House Loan editing (zero out Tom Nook's debt)
+- [x] Nook Miles editing (max the miles balance)
+- [x] Favorites Menu with visual Slot Picker (NMTs, Star Fragments, gold tools & nuggets)
+- [x] Pocket Loadouts (save/load 5 named setups to the SD card)
+- [x] Backup Restore (press ZL to rollback to the last SD backup)
+- [x] Clear Slot (press Minus to empty a pocket)
+
 ## 🎨 UI & Graphics
 
 - [ ] **Per-item Pictures** — show each item's sprite next to its name (graphics engine shipped in v1.1)
-- [ ] **Favorites Menu** — one-click injects for Nook Miles Tickets, Star Fragments, gold tools & more
 - [ ] **Dark Mode** — sleek theme for late-night editing sessions
 
 ## 💰 Money & Progression
 
-- [ ] **House Loan** — zero out Tom Nook's debt for free remodeling
-- [ ] **Nook Miles** — max the miles balance
 - [ ] **Turnip Price Overwrite** — set your own weekly stalk market prices
 
 ## 🌟 God-Mode Unlocks
@@ -50,7 +57,6 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 
 ## 🛠️ Quality of Life
 
-- [ ] **Pocket Loadouts** — save/load pocket setups to the SD card
 - [ ] **Wi-Fi Cloud Backup** — upload backups off-console for true cloud saves
 
 ---
