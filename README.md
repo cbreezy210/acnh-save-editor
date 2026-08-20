@@ -2,13 +2,14 @@
 
 A 100% native Nintendo Switch homebrew application for editing *Animal Crossing: New Horizons* save files directly on your console. No PC, no pulling the SD card, no complicated dumping tools required.
 
-![Version](https://img.shields.io/badge/version-1.2.0-green)
+![Version](https://img.shields.io/badge/version-1.3.0-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-## ✨ Features (v1.2.0)
+## ✨ Features (v1.3.0)
 
 *   **Dual-File Engine:** Edits both `personal.dat` (Wallet, Bank, Pockets, Nook Miles) and `main.dat` (House Loan) simultaneously.
-*   **Graphical UI:** Built with SDL2, featuring a clean, highlight-bar navigation system.
+*   **Native Item Search:** Press **Plus (+)** to open the native Switch keyboard and instantly search the 13,000+ item database by name. No more guessing hex codes!
+*   **Graphical UI:** Built with SDL2, featuring a clean, highlight-bar navigation system with an expanded, perfectly centered layout (900x480 panel) to prevent text overflow.
 *   **Favorites Menu:** Press **X** to quickly inject high-value items (NMTs, Star Fragments, Gold Tools, Nuggets).
 *   **Visual Slot Picker:** Choose exactly which pocket slot to inject items into without guessing.
 *   **Pocket Loadouts:** Press **Y** to save and load up to 5 custom pocket setups (Mining, Fishing, Terraforming) to your SD card.
@@ -18,7 +19,7 @@ A 100% native Nintendo Switch homebrew application for editing *Animal Crossing:
 ## 📥 Installation
 
 1. Ensure your Switch is running Custom Firmware (Atmosphere).
-2. Download the latest `acnh_editor_vX.X.X.zip` from the [Releases page](../../releases).
+2. Download the latest `acnh_editor_v1.3.0.zip` from the [Releases page](../../releases).
 3. Extract the `switch` folder to the root of your SD card.
 4. Launch the "ACNH Save Editor" from your Homebrew Menu (do **not** run ACNH at the same time!).
 
@@ -29,12 +30,12 @@ A 100% native Nintendo Switch homebrew application for editing *Animal Crossing:
 | **Up / Down** | Navigate menus / Select items |
 | **Left / Right** | Step values (+/- 1) or navigate columns |
 | **L / R** | Big step values (+/- 10 or 100,000) |
-| **A** | Backup to SD & Save changes to NAND |
+| **A** | Backup to SD & Save changes to NAND (or select "Quit App") |
 | **X** | Open Favorites Menu |
 | **Y** | Open Loadout Manager |
 | **Minus (-)** | Clear the currently selected pocket slot |
 | **ZL** | Restore from last SD backup (Emergency Rollback) |
-| **Plus (+)** | Exit app |
+| **Plus (+)** | Open Native Item Search |
 
 ## 🗺️ Roadmap
 

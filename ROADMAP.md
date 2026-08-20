@@ -28,38 +28,39 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 - [x] Backup Restore (press ZL to rollback to the last SD backup)
 - [x] Clear Slot (press Minus to empty a pocket)
 
+## ✅ Shipped — v1.3.0 (Current)
+- [x] Native Item Search — Press (+) to open the Switch keyboard and search the 13,000+ item database by name
+- [x] Optimized Item Database — Parsed into std::vector at boot for instant, lag-free name lookups
+- [x] Expanded UI Panel — Increased to 900x480 for better text containment and a premium look
+- [x] Centered Footer Text — Reorganized control guide into two clean, perfectly centered lines
+- [x] Search Results Truncation — Long item names safely truncated to prevent horizontal overflow
+- [x] Search Screen Pagination — Displays 8 items at a time with increased line height (38px)
+- [x] Graceful App Exit — Added a dedicated "Quit App" option to the main menu
+
 ---
 
-## 🟡 Coming Next — v1.3.x (Content, Safety & UX Update)
+## 🟡 Coming Next — v1.4.x (Content, Safety & Deep Edit Update)
 
 ### 💰 Money & Progression
-- [ ] Expanded Favorites — quick-select Cherry-blossom petals, Gold Roses, Bell Bags, NMTs
-- [ ] Turnip Price Overwrite — set your own weekly stalk market prices
+- [ ] Expanded Favorites — quick-select Cherry-blossom petals, Gold Roses, Bell Bags (10k, 30k, 99k), additional NMTs
+- [ ] Turnip Price Overwrite — set your own weekly stalk market prices, force Big/Small Spike patterns
 - [ ] Nook Miles & Achievements Unlocker — unlock all Nook Miles+ achievements and passport stamps
 
 ### 🌟 God-Mode Unlocks
-- [ ] DIY Recipe Unlocker — learn every recipe, golden tools included
+- [ ] DIY Recipe Unlocker — learn every recipe, golden tools included (bitfield manipulation)
 
 ### 🏝️ Island & Environment
-- [ ] Multi-Villager Support — edit Player 1–8 house blocks (Villager0–7)
-
-### 🛡️ Safety & Reliability
-- [ ] Game Version Validator — warn if save offsets don't match your game version
-- [ ] "Dry Run" Preview Mode — see exactly what will change before writing to NAND
-- [ ] Rolling Backup Manager — keep the last 3 backups with timestamps and version tracking
-
----
-
-## 🟠 Mid-Term — v1.4.x (Deep Edit & Storage Update)
+- [ ] Multi-Villager Support — edit Player 1–8 house blocks (Villager0–7, Base + player_index * 0x28A28)
+- [ ] Island "Flag" Edits — change Native Fruit and force specific K.K. Slider songs
 
 ### 📦 Inventory & Storage
 - [ ] House Storage Editing — parse and edit the ~2,400+ slot storage array with pagination/search
 - [ ] Custom Design Slot Management — clear all designs or inject popular design IDs
 
-### 🏝️ Island & Environment
-- [ ] Island "Flag" Edits — change Native Fruit (Peaches to Pears) and force K.K. Slider songs
-- [ ] Villager & Player Customization — edit Player Name, Appearance, Catchphrase; force villagers to move in
-- [ ] Island Infrastructure — max out shop upgrades; unlock terraforming without the app
+### 🛡️ Safety & Reliability
+- [ ] Game Version Validator — warn if save offsets don't match your game version
+- [ ] "Dry Run" Preview Mode — see exactly what will change before writing to NAND
+- [ ] Rolling Backup Manager — keep the last 3 backups with timestamps and version tracking
 
 ---
 
