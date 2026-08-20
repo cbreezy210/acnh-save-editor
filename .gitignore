@@ -1,11 +1,4 @@
-build/
-*.elf
-*.nro
-*.nacp
-*.o
-romfs/
-*.dat
-freshdump/
-*.bin
-items.txt
-font.ttf
+*.zip
+ACNH_Master_Prompt.txt
+release_v1.3.0/
+zipstage/
