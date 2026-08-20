@@ -6,6 +6,9 @@
 #include <cstdlib>
 #include <cstdint>
 #include <vector>
+#include <string>
+#include <algorithm>
+#include <cctype>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -175,7 +178,6 @@ static uint8_t* readSaveFile(FsFileSystem* fs, const char* path, size_t& outSize
 }
 
 static char bakMsg[128];
-static char loMsg[128];
 static bool backupToSd(const uint8_t* pers, size_t pSz, const uint8_t* main, size_t mSz) {
     FsFileSystem sd; Result rc = fsOpenSdCardFileSystem(&sd);
     if (R_FAILED(rc)) { snprintf(bakMsg, sizeof(bakMsg), "BAK sd open 0x%X", rc); return false; }
@@ -193,14 +195,54 @@ static bool backupToSd(const uint8_t* pers, size_t pSz, const uint8_t* main, siz
     return ok;
 }
 
-static char* itemText = nullptr;
+// ================= NEW: Item Database & Search Globals =================
+struct Item {
+    uint16_t id;
+    std::string name;
+};
+static std::vector<Item> g_allItems;
+static std::vector<Item> g_searchResults;
+static std::string g_searchQuery = "";
+static int g_searchSel = 0;
+
+// ================= UPDATED: Dynamic Status Buffer =================
+static char g_status_buf[128] = "Ready. ZL restores backup. (+) Search, (A) Save/Quit";
+static const char* g_status = g_status_buf;
+
+// ================= NEW: Fast Item Name Lookup =================
 static const char* itemName(int id) {
-    static char buf[96]; buf[0] = 0;
-    if (!itemText || id < 0) return buf;
-    const char* p = itemText;
-    for (int cur = 0; cur < id && *p; ) { if (*p == '\n') cur++; p++; }
-    int i = 0; while (*p && *p != '\n' && *p != '\r' && i < 95) buf[i++] = *p++;
-    buf[i] = 0; return buf;
+    static char buf[96];
+    if (id < 0 || id >= (int)g_allItems.size()) {
+        snprintf(buf, sizeof(buf), "Unknown (%04X)", id);
+        return buf;
+    }
+    const char* name = g_allItems[id].name.c_str();
+    if (name[0] == '\0') {
+        snprintf(buf, sizeof(buf), "Unnamed (%04X)", id);
+        return buf;
+    }
+    strncpy(buf, name, 95);
+    buf[95] = '\0';
+    return buf;
+}
+
+// ================= NEW: Native Switch Keyboard Wrapper =================
+static std::string showKeyboard(const char* guideText, const char* initialText) {
+    SwkbdConfig kbd;
+    if (R_SUCCEEDED(swkbdCreate(&kbd, 0))) {
+        swkbdConfigMakePresetDefault(&kbd);
+        swkbdConfigSetGuideText(&kbd, guideText);
+        if (initialText && initialText[0] != '\0') {
+            swkbdConfigSetInitialText(&kbd, initialText);
+        }
+        char outStr[256] = {0};
+        if (R_SUCCEEDED(swkbdShow(&kbd, outStr, sizeof(outStr)))) {
+            swkbdClose(&kbd);
+            return std::string(outStr);
+        }
+        swkbdClose(&kbd);
+    }
+    return initialText ? std::string(initialText) : "";
 }
 
 // ================= GRAPHICS SHELL =================
@@ -226,7 +268,6 @@ static int g_sel = 0;
 static int g_screen = 0;
 static int g_favSel = 0;
 static int g_favCount = 1;
-static const char* g_status = "Ready. ZL restores SD backup.";
 
 static void addText(TTF_Font* f, const char* s, SDL_Color c, int x, int y) {
     SDL_Texture* t = makeText(f, s, c); if (t) ui.push_back({ t, x, y });
@@ -241,10 +282,10 @@ static void buildUI(uint8_t* personal) {
     char buf[192];
 
     if (g_screen == 0) {
-        int y = 236; const int LH = 40;
+        int y = 220; const int LH = 40;
         auto line = [&](int idx, const char* text) {
-            if (idx == g_sel) { hl = { 260, y - 6, 760, 36 }; hlOn = true; addText(fLine, text, cream, 284, y); }
-            else { addText(fLine, text, brown, 284, y); }
+            if (idx == g_sel) { hl = { 210, y - 6, 860, 36 }; hlOn = true; addText(fLine, text, cream, 234, y); }
+            else { addText(fLine, text, brown, 234, y); }
             y += LH;
         };
         snprintf(buf, sizeof buf, "Wallet: %u", (unsigned)g_vals[0]); line(0, buf);
@@ -256,51 +297,93 @@ static void buildUI(uint8_t* personal) {
         if (g_newId == 0xFFFE) nm = "(empty slot)"; else if (!nm[0]) nm = "(unnamed)";
         snprintf(buf, sizeof buf, "Item:   %04X  %s", (unsigned)(uint16_t)g_newId, nm); line(5, buf);
         snprintf(buf, sizeof buf, "Count:  %d", (int)g_newCount); line(6, buf);
-        addText(fSmall, "Up/Dn sel < > step L R big A save - clear X favs Y loadouts + exit", brown, 284, 548);
+        line(7, "Quit App"); 
+        
+        // FIXED: Centered footer text fitting perfectly in the 900px wide panel
+        addText(fSmall, "Up/Dn select | < > step | L R big step", brown, 360, 540);
+        addText(fSmall, "A save/quit | - clear | X favs | Y loads | + search", brown, 320, 570);
     } else if (g_screen == 1) {
-        int y = 222; const int LH = 27;
+        int y = 220; const int LH = 27;
         for (int i = 0; i < FAV_COUNT; i++) {
-            if (i == g_favSel) { hl = { 260, y - 4, 760, 28 }; hlOn = true; addText(fSmall, FAVS[i].label, cream, 284, y); }
-            else { addText(fSmall, FAVS[i].label, brown, 284, y); }
+            if (i == g_favSel) { hl = { 210, y - 4, 860, 28 }; hlOn = true; addText(fSmall, FAVS[i].label, cream, 234, y); }
+            else { addText(fSmall, FAVS[i].label, brown, 234, y); }
             y += LH;
         }
         snprintf(buf, sizeof buf, "Count: %d   |   < > count   A pick slot   X back   + exit", g_favCount);
-        addText(fSmall, buf, brown, 284, 550);
+        addText(fSmall, buf, brown, 234, 570);
     } else if (g_screen == 2) {
-        int y0 = 222; const int LH = 30;
+        int y0 = 220; const int LH = 30;
         for (int s = 1; s <= 20; s++) {
             int col = (s <= 10) ? 0 : 1;
             int row = (s <= 10) ? (s - 1) : (s - 11);
-            int x = col ? 660 : 284;
+            int x = col ? 640 : 234;
             int y = y0 + row * LH;
             const uint8_t* rec = personal + POCKETS_BASE + (s - 1) * 8;
             uint16_t id = LE16(rec); uint16_t cnt = LE16(rec + 4);
             char linebuf[64];
             if (id == 0xFFFE) snprintf(linebuf, sizeof linebuf, "%2d (empty)", s);
             else snprintf(linebuf, sizeof linebuf, "%2d %-16.16s x%d", s, itemName(id), cnt);
-            if (s == g_slot) { hl = { x - 8, y - 4, 360, 28 }; hlOn = true; addText(fSmall, linebuf, cream, x, y); }
+            if (s == g_slot) { hl = { x - 8, y - 4, 380, 28 }; hlOn = true; addText(fSmall, linebuf, cream, x, y); }
             else addText(fSmall, linebuf, brown, x, y);
         }
         const char* pnm = itemName(g_newId);
         snprintf(buf, sizeof buf, "Inject: %-16.16s x%d   |   X back   A save   + exit", pnm, (int)g_newCount);
-        addText(fSmall, buf, brown, 284, 550);
-    } else {
-        int y = 222; const int LH = 40;
+        addText(fSmall, buf, brown, 234, 570);
+    } else if (g_screen == 3) {
+        int y = 220; const int LH = 40;
         for (int i = 0; i < LOADOUT_COUNT; i++) {
             char linebuf[80];
             if (g_loadoutExists[i]) snprintf(linebuf, sizeof(linebuf), "%-12s [Saved - %d/20 items]", LOADOUT_NAMES[i], g_loadoutCount[i]);
             else snprintf(linebuf, sizeof(linebuf), "%-12s [Empty]", LOADOUT_NAMES[i]);
-            if (i == g_loadoutSel) { hl = { 260, y - 6, 760, 36 }; hlOn = true; addText(fLine, linebuf, cream, 284, y); }
-            else { addText(fLine, linebuf, brown, 284, y); }
+            if (i == g_loadoutSel) { hl = { 210, y - 6, 860, 36 }; hlOn = true; addText(fLine, linebuf, cream, 234, y); }
+            else { addText(fLine, linebuf, brown, 234, y); }
             y += LH;
         }
-        addText(fSmall, "Up/Dn select  A Save to SD  B Load from SD  X back  + exit", brown, 284, 548);
+        addText(fSmall, "Up/Dn select  A Save to SD  B Load from SD  X back  + exit", brown, 234, 570);
+    } else if (g_screen == 4) { // Search Screen
+        int y = 220; const int LH = 38;
+        char searchBuf[128];
+        snprintf(searchBuf, sizeof(searchBuf), "Search: [ %s ]  (Press A to type)", g_searchQuery.c_str());
+        addText(fLine, searchBuf, brown, 234, y);
+        y += 50;
+
+        if (g_searchQuery.length() > 0) {
+            snprintf(searchBuf, sizeof(searchBuf), "Found %zu items:", g_searchResults.size());
+            addText(fSmall, searchBuf, brown, 234, y);
+            y += 35;
+
+            int startIdx = (g_searchSel / 8) * 8;
+            int endIdx = std::min((int)g_searchResults.size(), startIdx + 8);
+            
+            for (int i = startIdx; i < endIdx; i++) {
+                char linebuf[128];
+                const char* fullName = g_searchResults[i].name.c_str();
+                char truncatedName[40];
+                strncpy(truncatedName, fullName, 39);
+                truncatedName[39] = '\0';
+                
+                snprintf(linebuf, sizeof(linebuf), "%04X - %.39s", g_searchResults[i].id, truncatedName);
+                if (i == g_searchSel) {
+                    hl = { 210, y - 4, 860, 32 };
+                    hlOn = true;
+                    addText(fSmall, linebuf, cream, 234, y);
+                } else {
+                    addText(fSmall, linebuf, brown, 234, y);
+                }
+                y += LH;
+            }
+            snprintf(searchBuf, sizeof(searchBuf), "Up/Dn navigate | A select | B/+ cancel");
+            addText(fSmall, searchBuf, brown, 360, 570);
+        } else {
+            addText(fSmall, "Type a query to search the full item database.", brown, 234, y + 20);
+            addText(fSmall, "Press A to open the keyboard.", brown, 234, y + 50);
+        }
     }
 
     SDL_Color sc = cream;
     if (strstr(g_status, "fail") || strstr(g_status, "BAK") || strstr(g_status, "Mount") || strstr(g_status, "FAILED") || strstr(g_status, "ERR")) sc = red;
-    else if (strncmp(g_status, "SAVED", 5) == 0 || strncmp(g_status, "Saved", 5) == 0 || strncmp(g_status, "Loaded", 6) == 0 || strncmp(g_status, "RESTORED", 8) == 0) sc = okc;
-    addText(fSmall, g_status, sc, 284, 640);
+    else if (strncmp(g_status, "SAVED", 5) == 0 || strncmp(g_status, "Saved", 5) == 0 || strncmp(g_status, "Loaded", 6) == 0 || strncmp(g_status, "RESTORED", 8) == 0 || strncmp(g_status, "Selected", 8) == 0) sc = okc;
+    addText(fSmall, g_status, sc, 234, 630);
 }
 
 int main(int argc, char** argv) {
@@ -313,7 +396,7 @@ int main(int argc, char** argv) {
     fSmall = TTF_OpenFont("sdmc:/switch/acnh_editor/font.ttf", 24);
 
     SDL_Color creamC = { 0xF8, 0xF5, 0xEC, 255 };
-    SDL_Texture* title = makeText(fTitle, "ACNH Save Editor v1.2", creamC);
+    SDL_Texture* title = makeText(fTitle, "ACNH Save Editor v1.3", creamC);
     int titleW = 0, titleH = 0;
     if (title) SDL_QueryTexture(title, nullptr, nullptr, &titleW, &titleH);
 
@@ -322,10 +405,24 @@ int main(int argc, char** argv) {
       if (px) { icon = SDL_CreateTexture(g_ren, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, iw, ih);
                 SDL_UpdateTexture(icon, nullptr, px, iw * 4); SDL_SetTextureBlendMode(icon, SDL_BLENDMODE_BLEND); stbi_image_free(px); } }
 
+    // NEW: Optimized items.txt loading
     FILE* it = fopen("sdmc:/switch/acnh_editor/items.txt", "rb");
-    if (it) { fseek(it,0,SEEK_END); long tsz=ftell(it); fseek(it,0,SEEK_SET);
-              itemText=(char*)malloc(tsz+1); if(itemText){fread(itemText,1,tsz,it); itemText[tsz]=0;} fclose(it); }
-    if (!itemText) g_status = "No items.txt on SD!";
+    if (it) {
+        char line[256];
+        uint16_t id = 0;
+        while (fgets(line, sizeof(line), it)) {
+            size_t len = strlen(line);
+            while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) {
+                line[len-1] = '\0';
+                len--;
+            }
+            g_allItems.push_back({id, std::string(line)});
+            id++;
+        }
+        fclose(it);
+    } else {
+        snprintf(g_status_buf, sizeof(g_status_buf), "No items.txt on SD!");
+    }
 
     FsFileSystem fs; FsSaveDataAttribute attr; memset(&attr, 0, sizeof(attr));
     attr.application_id = 0x01006F8002326000ull; attr.save_data_type = 3;
@@ -344,7 +441,7 @@ int main(int argc, char** argv) {
             origP = (uint8_t*)malloc(pSz); if(origP) memcpy(origP, personal, pSz);
             origM = (uint8_t*)malloc(mSz); if(origM) memcpy(origM, mainData, mSz);
         }
-    } else { g_status = "Mount failed! Close ACNH fully first."; }
+    } else { snprintf(g_status_buf, sizeof(g_status_buf), "Mount failed! Close ACNH fully first."); }
 
     Region pReg[16], mReg[32]; int pRegC=0, mRegC=0;
 
@@ -370,7 +467,7 @@ int main(int argc, char** argv) {
 
         const uint8_t* rec = personal + POCKETS_BASE;
         g_newId = LE16(rec); g_newCount = LE16(rec + 4);
-    } else if (R_SUCCEEDED(rc)) { g_status = "FAILED to read NAND files!"; }
+    } else if (R_SUCCEEDED(rc)) { snprintf(g_status_buf, sizeof(g_status_buf), "FAILED to read NAND files!"); }
 
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
     PadState pad; padInitializeDefault(&pad);
@@ -400,7 +497,7 @@ int main(int argc, char** argv) {
     };
 
     auto doSave = [&]() {
-        if (!backupToSd(origP, pSz, origM, mSz)) { g_status = bakMsg; }
+        if (!backupToSd(origP, pSz, origM, mSz)) { snprintf(g_status_buf, sizeof(g_status_buf), "%s", bakMsg); }
         else {
             uint8_t* outP = (uint8_t*)malloc(pSz);
             uint8_t* outM = (uint8_t*)malloc(mSz);
@@ -431,9 +528,9 @@ int main(int argc, char** argv) {
                     memcpy(origM, outM, mSz); memcpy(mainData, outM, mSz); CryptACNH(mHdr, mainData, mSz);
                     uint8_t* pr = personal + POCKETS_BASE + (g_slot - 1) * 8;
                     WriteLE16(pr, (uint16_t)g_newId); WriteLE16(pr + 4, (uint16_t)g_newCount);
-                    g_status = "SAVED personal + main to NAND!";
-                } else g_status = "NAND write failed!";
-            } else g_status = "malloc failed!";
+                    snprintf(g_status_buf, sizeof(g_status_buf), "SAVED personal + main to NAND!");
+                } else { snprintf(g_status_buf, sizeof(g_status_buf), "NAND write failed!"); }
+            } else { snprintf(g_status_buf, sizeof(g_status_buf), "malloc failed!"); }
             if (outP) free(outP);
             if (outM) free(outM);
         }
@@ -441,7 +538,20 @@ int main(int argc, char** argv) {
 
     while (appletMainLoop()) {
         padUpdate(&pad); u64 k = padGetButtonsDown(&pad); u64 held = padGetButtons(&pad);
-        if (k & HidNpadButton_Plus) break;
+        
+        // UPDATED: Plus button now toggles Search Screen instead of quitting
+        if (k & HidNpadButton_Plus) {
+            if (g_screen == 4) {
+                g_screen = 0; // Close search
+                needDraw = true;
+            } else {
+                g_screen = 4; // Open search
+                g_searchQuery = "";
+                g_searchResults.clear();
+                g_searchSel = 0;
+                needDraw = true;
+            }
+        }
 
         if (held & (HidNpadButton_Left|HidNpadButton_Right|HidNpadButton_L|HidNpadButton_R)) {
             hf++; if (hf > 20 && (hf % 5 == 0)) k |= held & (HidNpadButton_Left|HidNpadButton_Right|HidNpadButton_L|HidNpadButton_R);
@@ -468,29 +578,29 @@ int main(int argc, char** argv) {
             if (k & HidNpadButton_R) big = +1;
 
             if (g_screen == 0) {
-                if (k & HidNpadButton_Up)   { g_sel = (g_sel + 6) % 7; needDraw = true; }
-                if (k & HidNpadButton_Down) { g_sel = (g_sel + 1) % 7; needDraw = true; }
+                if (k & HidNpadButton_Up)   { g_sel = (g_sel + 7) % 8; needDraw = true; } // Updated for 8 items
+                if (k & HidNpadButton_Down) { g_sel = (g_sel + 1) % 8; needDraw = true; }
 
-                if (k & HidNpadButton_Minus) { // Clear current pocket slot
+                if (k & HidNpadButton_Minus) {
                     g_newId = 0xFFFE;
                     g_newCount = 0;
                     uint8_t* pr = personal + POCKETS_BASE + (g_slot - 1) * 8;
                     WriteLE16(pr, 0xFFFE);
                     WriteLE16(pr + 4, 0);
-                    g_status = "Slot cleared! Press A to save to NAND.";
+                    snprintf(g_status_buf, sizeof(g_status_buf), "Slot cleared! Press A to save to NAND.");
                     needDraw = true;
                 }
 
-                if (k & HidNpadButton_ZL) { // Restore from SD backup
+                if (k & HidNpadButton_ZL) {
                     FILE* fp = fopen("sdmc:/switch/acnh_editor/backup_personal.dat", "rb");
                     FILE* fm = fopen("sdmc:/switch/acnh_editor/backup_main.dat", "rb");
                     if (!fp || !fm) {
-                        g_status = "Restore failed: backup files missing!";
+                        snprintf(g_status_buf, sizeof(g_status_buf), "Restore failed: backup files missing!");
                     } else {
                         fseek(fp, 0, SEEK_END); long psz2 = ftell(fp); fseek(fp, 0, SEEK_SET);
                         fseek(fm, 0, SEEK_END); long msz2 = ftell(fm); fseek(fm, 0, SEEK_SET);
                         if ((size_t)psz2 != pSz || (size_t)msz2 != mSz) {
-                            g_status = "Restore failed: backup size mismatch!";
+                            snprintf(g_status_buf, sizeof(g_status_buf), "Restore failed: backup size mismatch!");
                         } else {
                             uint8_t* bp = (uint8_t*)malloc(pSz);
                             uint8_t* bm = (uint8_t*)malloc(mSz);
@@ -498,7 +608,7 @@ int main(int argc, char** argv) {
                                 fread(bp, 1, pSz, fp) == pSz &&
                                 fread(bm, 1, mSz, fm) == mSz;
                             if (!okRead) {
-                                g_status = "Restore failed: backup read error!";
+                                snprintf(g_status_buf, sizeof(g_status_buf), "Restore failed: backup read error!");
                             } else {
                                 auto writeNand2 = [&](const char* path, uint8_t* buf, size_t sz) -> bool {
                                     FsFile f; if (R_FAILED(fsFsOpenFile(&fs, path, FsOpenMode_Write, &f))) return false;
@@ -519,9 +629,9 @@ int main(int argc, char** argv) {
                                     g_vals[3] = DecInt(LE32(mainData + LOAN_OFF), mainData[LOAN_OFF+6], LE16(mainData + LOAN_OFF + 4));
                                     const uint8_t* rec2 = personal + POCKETS_BASE + (g_slot - 1) * 8;
                                     g_newId = LE16(rec2); g_newCount = LE16(rec2 + 4);
-                                    g_status = "RESTORED from SD backup!";
+                                    snprintf(g_status_buf, sizeof(g_status_buf), "RESTORED from SD backup!");
                                 } else {
-                                    g_status = "Restore failed: NAND write failed!";
+                                    snprintf(g_status_buf, sizeof(g_status_buf), "Restore failed: NAND write failed!");
                                 }
                             }
                             if (bp) free(bp);
@@ -546,12 +656,19 @@ int main(int argc, char** argv) {
                         if (ns != g_slot) { g_slot = ns; const uint8_t* r2 = personal + POCKETS_BASE + (g_slot - 1) * 8; g_newId = LE16(r2); g_newCount = LE16(r2 + 4); }
                     } else if (g_sel == 5) {
                         int64_t nv = g_newId + d + big * 256; if (nv < 0) nv = 0; if (nv > 65534) nv = 65534; g_newId = (int32_t)nv;
-                    } else {
+                    } else if (g_sel == 6) {
                         int64_t nv = g_newCount + d + big * 10; if (nv < 1) nv = 1; if (nv > 99) nv = 99; g_newCount = (int32_t)nv;
                     }
                     needDraw = true;
                 }
-                if (k & HidNpadButton_A) { doSave(); needDraw = true; }
+                if (k & HidNpadButton_A) { 
+                    if (g_sel == 7) {
+                        break; // Quit app
+                    } else {
+                        doSave(); 
+                    }
+                    needDraw = true; 
+                }
             } else if (g_screen == 1) {
                 if (k & HidNpadButton_Up)   { g_favSel = (g_favSel + FAV_COUNT - 1) % FAV_COUNT; needDraw = true; }
                 if (k & HidNpadButton_Down) { g_favSel = (g_favSel + 1) % FAV_COUNT; needDraw = true; }
@@ -578,24 +695,24 @@ int main(int argc, char** argv) {
                     if (ns != g_slot) { g_slot = ns; needDraw = true; }
                 }
                 if (k & HidNpadButton_A) { doSave(); needDraw = true; }
-            } else {
+            } else if (g_screen == 3) {
                 if (k & HidNpadButton_Up)   { g_loadoutSel = (g_loadoutSel + LOADOUT_COUNT - 1) % LOADOUT_COUNT; needDraw = true; }
                 if (k & HidNpadButton_Down) { g_loadoutSel = (g_loadoutSel + 1) % LOADOUT_COUNT; needDraw = true; }
 
-                if (k & HidNpadButton_A) { // Save Loadout (stdio)
+                if (k & HidNpadButton_A) {
                     char path[96]; snprintf(path, sizeof(path), "sdmc:/switch/acnh_editor/l_%d.dat", g_loadoutSel);
                     FILE* f = fopen(path, "wb");
                     if (f) {
                         size_t wr = fwrite(personal + POCKETS_BASE, 1, 160, f);
                         fclose(f);
-                        g_status = (wr == 160) ? "Saved loadout to SD!" : "Loadout write short!";
+                        snprintf(g_status_buf, sizeof(g_status_buf), (wr == 160) ? "Saved loadout to SD!" : "Loadout write short!");
                     } else {
-                        g_status = "LO ERR fopen failed!";
+                        snprintf(g_status_buf, sizeof(g_status_buf), "LO ERR fopen failed!");
                     }
                     checkLoadouts();
                     needDraw = true;
                 }
-                if (k & HidNpadButton_B) { // Load Loadout (stdio)
+                if (k & HidNpadButton_B) {
                     char path[96]; snprintf(path, sizeof(path), "sdmc:/switch/acnh_editor/l_%d.dat", g_loadoutSel);
                     FILE* f = fopen(path, "rb");
                     if (f) {
@@ -604,14 +721,53 @@ int main(int argc, char** argv) {
                         if (rd == 160) {
                             g_newId = LE16(personal + POCKETS_BASE + (g_slot - 1) * 8);
                             g_newCount = LE16(personal + POCKETS_BASE + (g_slot - 1) * 8 + 4);
-                            g_status = "Loaded loadout! Press A to save to NAND.";
+                            snprintf(g_status_buf, sizeof(g_status_buf), "Loaded loadout! Press A to save to NAND.");
                             g_screen = 0;
                         } else {
-                            g_status = "Loadout file too small!";
+                            snprintf(g_status_buf, sizeof(g_status_buf), "Loadout file too small!");
                         }
                     } else {
-                        g_status = "Loadout file not found!";
+                        snprintf(g_status_buf, sizeof(g_status_buf), "Loadout file not found!");
                     }
+                    needDraw = true;
+                }
+            } else if (g_screen == 4) { // NEW: Search Screen Input
+                if (k & HidNpadButton_A) {
+                    if (g_searchQuery.length() > 0 && g_searchSel < (int)g_searchResults.size()) {
+                        g_newId = g_searchResults[g_searchSel].id;
+                        g_newCount = 1;
+                        g_screen = 0;
+                        snprintf(g_status_buf, sizeof(g_status_buf), "Selected: %s", itemName(g_newId));
+                        needDraw = true;
+                    } else {
+                        std::string result = showKeyboard("Search Items (e.g., springy)", g_searchQuery.c_str());
+                        g_searchQuery = result;
+                        
+                        g_searchResults.clear();
+                        std::string lowerQuery = g_searchQuery;
+                        for (char &c : lowerQuery) c = std::tolower((unsigned char)c);
+                        
+                        for (const auto& item : g_allItems) {
+                            std::string lowerName = item.name;
+                            for (char &c : lowerName) c = std::tolower((unsigned char)c);
+                            if (lowerName.find(lowerQuery) != std::string::npos) {
+                                g_searchResults.push_back(item);
+                            }
+                        }
+                        g_searchSel = 0;
+                        needDraw = true;
+                    }
+                }
+                if (k & HidNpadButton_B) {
+                    g_screen = 0;
+                    needDraw = true;
+                }
+                if (k & HidNpadButton_Up) {
+                    if (g_searchSel > 0) g_searchSel--;
+                    needDraw = true;
+                }
+                if (k & HidNpadButton_Down) {
+                    if (g_searchSel < (int)g_searchResults.size() - 1) g_searchSel++;
                     needDraw = true;
                 }
             }
@@ -619,13 +775,20 @@ int main(int argc, char** argv) {
         svcSleepThread(16000000);
         if (needDraw) { needDraw = false; buildUI(personal); }
 
+        // EXPANDED PANEL RENDERING
         SDL_SetRenderDrawColor(g_ren, 0x7A, 0xC1, 0x43, 0xFF); SDL_RenderClear(g_ren);
         SDL_SetRenderDrawColor(g_ren, 0xF8, 0xF5, 0xEC, 0xFF);
-        SDL_Rect panel = { 240, 140, 800, 440 }; SDL_RenderFillRect(g_ren, &panel);
+        
+        // EXPANDED PANEL: 900px wide, 480px tall
+        SDL_Rect panel = { 190, 120, 900, 480 }; SDL_RenderFillRect(g_ren, &panel);
+        
         SDL_SetRenderDrawColor(g_ren, 0x7A, 0x5C, 0x3E, 0xFF);
-        SDL_Rect bar = { 240, 140, 800, 70 }; SDL_RenderFillRect(g_ren, &bar);
-        if (title) { SDL_Rect dst = { 640 - titleW / 2, 140 + (70 - titleH) / 2, titleW, titleH }; SDL_RenderCopy(g_ren, title, nullptr, &dst); }
-        if (icon) { SDL_Rect dst = { 976, 147, 56, 56 }; SDL_RenderCopy(g_ren, icon, nullptr, &dst); }
+        // EXPANDED BROWN BAR: 900px wide, 80px tall
+        SDL_Rect bar = { 190, 120, 900, 80 }; SDL_RenderFillRect(g_ren, &bar);
+        
+        if (title) { SDL_Rect dst = { 640 - titleW / 2, 120 + (80 - titleH) / 2, titleW, titleH }; SDL_RenderCopy(g_ren, title, nullptr, &dst); }
+        if (icon) { SDL_Rect dst = { 1014, 132, 56, 56 }; SDL_RenderCopy(g_ren, icon, nullptr, &dst); }
+        
         if (hlOn) { SDL_SetRenderDrawColor(g_ren, 0x6A, 0xA8, 0x4F, 0xFF); SDL_RenderFillRect(g_ren, &hl); }
         for (auto& u : ui) { SDL_Rect dst = { u.x, u.y, 0, 0 }; SDL_QueryTexture(u.t, nullptr, nullptr, &dst.w, &dst.h); SDL_RenderCopy(g_ren, u.t, nullptr, &dst); }
         SDL_RenderPresent(g_ren);
@@ -644,7 +807,6 @@ int main(int argc, char** argv) {
     if (mainData) free(mainData);
     if (mHdr) free(mHdr);
     if (origM) free(origM);
-    if (itemText) free(itemText);
     if (R_SUCCEEDED(rc)) fsFsClose(&fs);
     SDL_DestroyRenderer(g_ren); SDL_DestroyWindow(win); SDL_Quit();
     return 0;
