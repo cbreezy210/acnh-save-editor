@@ -37,19 +37,24 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 - [x] Search Screen Pagination — Displays 6 items at a time with increased line height (38px)
 - [x] Graceful App Exit — Added a dedicated "Quit App" option to the main menu
 
-##  Ready to Ship — v1.3.1 (UI Polish & Bug Fixes)
+---
+
+## 🔧 Ready to Ship — v1.4.0 (The Favorites Overhaul & UI Polish)
 *Target Release: Late August 2026*
 - [x] Search Footer Overlap Fix — Reduced search results per page to prevent text clipping
 - [x] Search Pagination Fix — Corrected page jump calculation to prevent skipping items
-- [ ] **Release pending** — Scheduled for a few days after v1.3.0 launch
+- [x] Paginated Favorites Menu — Displays 8 items per page with smooth auto-scrolling (matches Search Screen UX)
+- [x] Alphabetical Sorting — Favorites auto-sort A–Z at boot for instant scanning
+- [x] Dynamic Name Resolution — No hardcoded hex IDs; favorites resolve via exact string matching from items.txt (future-proof)
+- [x] Expanded 22-Item Roster — Bell bag, Bell voucher, 99,000 Bells, gold roses, cherry-blossom petal, pearl, gold bars, all 6 golden tools, and both crowns
+- [ ] **Release pending** — Scheduled a few days after the v1.3.0 launch
 
 ---
 
-##  Coming Next — v1.4.x (Content, Safety & Deep Edit Update)
+## 🟡 Coming Next — v1.5.x (Content, Safety & Deep Edit Update)
 *Target Release: Q4 2026*
 
 ### 💰 Money & Progression
-- [ ] Expanded Favorites — quick-select Cherry-blossom petals, Gold Roses, Bell Bags (10k, 30k, 99k), additional NMTs
 - [ ] Turnip Price Overwrite — set your own weekly stalk market prices, force Big/Small Spike patterns
 - [ ] Nook Miles & Achievements Unlocker — unlock all Nook Miles+ achievements and passport stamps
 
@@ -79,7 +84,7 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 
 ---
 
-##  Long-Term — v2.0.0 (Architecture & Community Overhaul)
+## 🔴 Long-Term — v2.0.0 (Architecture & Community Overhaul)
 *Target Release: 2027*
 
 ### 🏆 Completion Cheats
