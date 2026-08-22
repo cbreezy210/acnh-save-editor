@@ -2,3 +2,13 @@
 ACNH_Master_Prompt.txt
 release_v1.3.0/
 zipstage/
+
+# Local build artifacts (never commit)
+/build/
+/*.nro
+/*.elf
+/*.nacp
+/romfs/
+/freshdump/
+/font.ttf
+/items.txt
