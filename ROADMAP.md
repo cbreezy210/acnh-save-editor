@@ -51,11 +51,12 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 
 ---
 
-## 🟡 Coming Next — v1.5.x (Content, Safety & Deep Edit Update)
+## 🟡 Coming Next — v1.5.x (Stalk Market, Safety & Deep Edit Update)
 *Target Release: Q4 2026*
 
 ### 💰 Money & Progression
-- [ ] Turnip Price Overwrite — set your own weekly stalk market prices, force Big/Small Spike patterns
+- [ ] **Stalk Market Assistant (Turnip Pattern Prediction) — v1.5.0 HEADLINE** — Read-only & non-destructive: reads your buy price + revealed AM/PM prices and runs the documented pattern algorithm (Fluctuating / Large Spike / Decreasing / Small Spike) to predict the week's prices. Your save stays 100% forensically clean.
+- [ ] Turnip Price Overwrite (opt-in advanced) — set your own weekly stalk market prices, force Big/Small Spike patterns. Ships only AFTER the prediction feature.
 - [ ] Nook Miles & Achievements Unlocker — unlock all Nook Miles+ achievements and passport stamps
 
 ### 🌟 God-Mode Unlocks
@@ -84,8 +85,19 @@ This file tracks what's shipped and what's coming next. Suggestions welcome — 
 
 ---
 
+## 🏝️ v1.6.0 — Island Blueprint Initiative (Phase A: Export-Only)
+*Target Release: Early 2027*
+- [ ] **Island Blueprint JSON Export (read-only, zero risk)** — export your full island layout (terrain, paths, placed furniture, building positions) to a standardized JSON file.
+- [ ] **Open Blueprint JSON Schema** — published as a community standard so layouts can be shared and adopted by other tools.
+- [ ] *No import in this phase* — keeps your save 100% safe while the format matures.
+
+---
+
 ## 🔴 Long-Term — v2.0.0 (Architecture & Community Overhaul)
 *Target Release: 2027*
+
+### 🏝️ Island Blueprint Import (Phase B)
+- [ ] **Blueprint Import** — apply community JSON blueprints to reshape your island, gated behind the Dry-Run Diff viewer with conflict validation.
 
 ### 🏆 Completion Cheats
 - [ ] Museum Completion Flag — mark all fish, bugs, fossils, and art as donated
